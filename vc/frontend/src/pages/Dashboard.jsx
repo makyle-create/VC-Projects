@@ -1,4 +1,4 @@
-```jsx
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api, { errMsg } from '../api';
@@ -354,4 +354,3 @@ function OrgDashboard() {
     </>
   );
 }
-```
