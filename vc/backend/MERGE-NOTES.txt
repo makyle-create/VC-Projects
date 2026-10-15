@@ -1,0 +1,4 @@
+Merged into the existing Volunteer Connect project.
+Laravel API files are located in vc/backend.
+The original .env was intentionally excluded because it may contain secrets; copy .env.example to .env and configure your own values.
+Composer vendor/ and frontend node_modules/ were excluded as generated dependencies; install them with Composer and npm when setting up locally.
