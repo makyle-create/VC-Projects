@@ -1,4 +1,18 @@
-node_modules
-dist
+# Environment secrets
 .env
-vendor
+.env.*
+!.env.example
+
+# Frontend dependencies and build output
+node_modules/
+dist/
+
+# Laravel dependencies and generated files
+/vendor/
+/storage/*.key
+/bootstrap/cache/*.php
+
+# Local and editor files
+.DS_Store
+Thumbs.db
+.vscode/
