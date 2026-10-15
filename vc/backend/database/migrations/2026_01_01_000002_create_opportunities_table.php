@@ -1,25 +1,24 @@
+
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up(): void {
-        Schema::create('opportunities', function (Blueprint $t) {
-            $t->id();
-            $t->foreignId('user_id')->constrained()->cascadeOnDelete(); // the organization
-            $t->string('title');
-            $t->string('category');
-            $t->date('date');
-            $t->unsignedSmallInteger('hours');
-            $t->string('location');
-            $t->unsignedSmallInteger('slots');
-            $t->text('description');
-            $t->text('requirements')->nullable();
-            $t->string('skills')->nullable();
-            $t->string('status')->default('active'); // active | draft
-            $t->timestamps();
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('opportunities', function (Blueprint $table) {
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
         });
     }
-    public function down(): void { Schema::dropIfExists('opportunities'); }
+
+    public function down(): void
+    {
+        Schema::table('opportunities', function (Blueprint $table) {
+            $table->dropColumn(['start_time', 'end_time']);
+        });
+    }
 };
