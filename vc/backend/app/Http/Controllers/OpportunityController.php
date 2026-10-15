@@ -31,10 +31,28 @@ class OpportunityController extends Controller
             'location' => 'required|string|max:255',
             'slots' => 'required|integer|min:1|max:10000',
             'description' => 'required|string|min:10',
-            'requirements' => 'nullable|string',
-            'skills' => 'nullable|string|max:255',
-            'status' => 'nullable|in:active,draft',
         ];
+    }
+
+    private function orgOnly(Request $request): void
+    {
+        abort_unless(
+            $request->user() && $request->user()->isOrganization(),
+            403,
+            'Only organizations can do this.'
+        );
+    }
+
+    private function owns(
+        Request $request,
+        Opportunity $opportunity
+    ): void {
+        $this->orgOnly($request);
+
+        abort_unless(
+            $opportunity->user_id === $request->user()->id,
+            404
+        );
     }
 
     private function validatedOpportunity(Request $request): array
@@ -46,7 +64,9 @@ class OpportunityController extends Controller
 
         if ($end <= $start) {
             throw ValidationException::withMessages([
-                'end_time' => 'The end time must be later than the start time.',
+                'end_time' => [
+                    'The end time must be later than the start time.',
+                ],
             ]);
         }
 
@@ -55,7 +75,9 @@ class OpportunityController extends Controller
 
         if ($hours > 100) {
             throw ValidationException::withMessages([
-                'end_time' => 'The event duration cannot exceed 100 hours.',
+                'end_time' => [
+                    'The event duration cannot exceed 100 hours.',
+                ],
             ]);
         }
 
@@ -64,56 +86,64 @@ class OpportunityController extends Controller
         return $data;
     }
 
-    private function orgOnly(Request $request)
-    {
-        abort_unless(
-            $request->user()->isOrganization(),
-            403,
-            'Only organizations can do this.'
-        );
-    }
-
-    private function owns(Request $request, Opportunity $opportunity)
-    {
-        $this->orgOnly($request);
-
-        abort_unless(
-            $opportunity->user_id === $request->user()->id,
-            404
-        );
-    }
-
-    // Public: search, filter by category/date, sort, paginate
+    /**
+     * Public: search, filter, sort, and paginate opportunities.
+     */
     public function index(Request $request)
     {
-        $q = Opportunity::with('organization:id,name')
+        $query = Opportunity::with('organization:id,name')
             ->withCount('signups')
             ->where('status', 'active');
 
-        if ($s = strtolower($request->query('q', ''))) {
-            $q->where(fn ($w) => $w
-                ->whereRaw('LOWER(title) LIKE ?', ["%$s%"])
-                ->orWhereRaw('LOWER(description) LIKE ?', ["%$s%"])
-                ->orWhereRaw('LOWER(location) LIKE ?', ["%$s%"]));
+        $search = strtolower($request->query('q', ''));
+
+        if ($search !== '') {
+            $query->where(function ($where) use ($search) {
+                $where->whereRaw(
+                    'LOWER(title) LIKE ?',
+                    ["%{$search}%"]
+                )->orWhereRaw(
+                    'LOWER(description) LIKE ?',
+                    ["%{$search}%"]
+                )->orWhereRaw(
+                    'LOWER(location) LIKE ?',
+                    ["%{$search}%"]
+                );
+            });
         }
 
-        if ($c = $request->query('category')) {
-            $q->where('category', $c);
+        $category = $request->query('category');
+
+        if ($category) {
+            $query->where('category', $category);
         }
 
-        if ($d = $request->query('date')) {
-            $q->whereDate('date', '>=', $d);
+        $date = $request->query('date');
+
+        if ($date) {
+            $query->whereDate('date', '>=', $date);
         }
 
-        match ($request->query('sort')) {
-            'title' => $q->orderBy('title'),
-            'newest' => $q->latest(),
-            default => $q->orderBy('date'),
-        };
+        switch ($request->query('sort')) {
+            case 'title':
+                $query->orderBy('title');
+                break;
 
-        return $q->paginate(6);
+            case 'newest':
+                $query->latest();
+                break;
+
+            default:
+                $query->orderBy('date');
+                break;
+        }
+
+        return $query->paginate(6);
     }
 
+    /**
+     * Show one opportunity.
+     */
     public function show(Opportunity $opportunity)
     {
         return $opportunity
@@ -121,33 +151,41 @@ class OpportunityController extends Controller
             ->loadCount('signups');
     }
 
-    // Organization: own opportunities + sign-ups + dashboard totals
+    /**
+     * Organization: retrieve its opportunities and sign-ups.
+     */
     public function mine(Request $request)
     {
         $this->orgOnly($request);
 
-        $opps = Opportunity::where('user_id', $request->user()->id)
+        $opportunities = Opportunity::where(
+            'user_id',
+            $request->user()->id
+        )
             ->withCount('signups')
             ->latest()
             ->get();
 
-        $signups = Signup::whereIn('opportunity_id', $opps->pluck('id'))
-            ->with(['user:id,name', 'opportunity:id,title'])
+        $signups = Signup::whereIn(
+            'opportunity_id',
+            $opportunities->pluck('id')
+        )
+            ->with([
+                'user:id,name',
+                'opportunity:id,title',
+            ])
             ->latest()
             ->get();
 
         return [
-            'opportunities' => $opps,
+            'opportunities' => $opportunities,
             'signups' => $signups,
-            'totals' => [
-                'posted' => $opps->count(),
-                'volunteers' => $signups->pluck('user_id')->unique()->count(),
-                'hours' => $signups->sum('hours'),
-                'pending' => $signups->where('status', 'joined')->count(),
-            ],
         ];
     }
 
+    /**
+     * Create an opportunity.
+     */
     public function store(Request $request)
     {
         $this->orgOnly($request);
@@ -161,19 +199,29 @@ class OpportunityController extends Controller
         return response()->json($opportunity, 201);
     }
 
-    public function update(Request $request, Opportunity $opportunity)
-    {
+    /**
+     * Update an opportunity owned by the organization.
+     */
+    public function update(
+        Request $request,
+        Opportunity $opportunity
+    ) {
         $this->owns($request, $opportunity);
 
         $data = $this->validatedOpportunity($request);
 
         $opportunity->update($data);
 
-        return $opportunity;
+        return $opportunity->fresh();
     }
 
-    public function destroy(Request $request, Opportunity $opportunity)
-    {
+    /**
+     * Delete an opportunity owned by the organization.
+     */
+    public function destroy(
+        Request $request,
+        Opportunity $opportunity
+    ) {
         $this->owns($request, $opportunity);
 
         $opportunity->delete();
