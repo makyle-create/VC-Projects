@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Models;
@@ -24,6 +23,8 @@ class Opportunity extends Model
 
     protected $casts = [
         'date' => 'date:Y-m-d',
+        'hours' => 'integer',
+        'slots' => 'integer',
     ];
 
     public function organization()

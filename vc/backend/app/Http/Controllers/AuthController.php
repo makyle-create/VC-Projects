@@ -10,6 +10,9 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        // Phones often auto-capitalise the first letter of an email; treat emails case-insensitively.
+        $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
+
         $data = $request->validate([
             'name' => 'required|string|min:2|max:120',
             'email' => 'required|email|unique:users,email',
@@ -23,7 +26,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $data = $request->validate(['email' => 'required|email', 'password' => 'required']);
-        $user = User::where('email', $data['email'])->first();
+        $user = User::whereRaw('LOWER(email) = ?', [strtolower(trim($data['email']))])->first();
         if (!$user || !Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages(['email' => 'These credentials do not match our records.']);
         }
@@ -32,7 +35,7 @@ class AuthController extends Controller
 
     public function me(Request $request) { return $request->user(); }
 
-        public function updateProfile(Request $request)
+    public function updateProfile(Request $request)
     {
         $data = $request->validate([
             'name' => 'required|string|min:2|max:120',
