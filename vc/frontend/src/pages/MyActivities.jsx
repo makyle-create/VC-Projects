@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../api';
+import api, { errMsg } from '../api';
 import Icon from '../components/Icon';
 import { catOf, fmt } from '../components/OppCard';
 import { Empty, Skeletons, Stat } from '../components/ui';
 
 const GOAL = 40;
 export default function MyActivities() {
-  const [d, setD] = useState(null); const [tab, setTab] = useState('joined');
-  useEffect(() => { api.get('/me/signups').then((r) => setD(r.data)); }, []);
+  const [d, setD] = useState(null); const [tab, setTab] = useState('joined'); const [err, setErr] = useState('');
+  useEffect(() => { api.get('/me/signups').then((r) => setD(r.data)).catch((e) => setErr(errMsg(e))); }, []);
+  if (err) return <><h1>My activities and hours</h1><Empty icon="alert-circle" title="Couldn't load your activities" text={err} /></>;
   if (!d) return <><h1>My activities and hours</h1><Skeletons n={3} /></>;
   const T = d.totals; const list = d.data.filter((s) => s.status === tab);
   const pct = Math.min(100, (T.hours / GOAL) * 100);

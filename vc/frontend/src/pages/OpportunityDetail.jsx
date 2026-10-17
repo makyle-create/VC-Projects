@@ -36,6 +36,7 @@ export default function OpportunityDetail() {
 
   let action;
   if (user?.role === 'organization') action = <Link className="btn g full" to={`/edit/${o.id}`}><Icon name="edit" />Edit this opportunity</Link>;
+  else if (user?.role === 'admin') action = <p className="mut small">You're signed in as an administrator. Use the admin console to moderate this listing.</p>;
   else if (mine) action = <button className="btn g full lg" disabled><Icon name="check" />{mine.status === 'completed' ? 'Completed' : "You're signed up"}</button>;
   else if (left <= 0) action = <button className="btn g full lg" disabled>This opportunity is full</button>;
   else action = <button className="btn full lg" onClick={signUp} disabled={busy}>{busy ? 'Signing up…' : user ? 'Sign up to volunteer' : 'Log in to sign up'}</button>;
@@ -46,7 +47,7 @@ export default function OpportunityDetail() {
       <div className="detail">
         <div>
           <div className="d-head" style={{ '--h': c.h }}>
-            <span className="badge pri"><Icon name={c.icon} />{o.category}</span>
+            <span className="badge pri"><Icon name={c.icon} />{o.category}</span>{o.status === 'draft' && <span className="badge" style={{ marginLeft: 8 }}>Draft (not public)</span>}
             <h1>{o.title}</h1>
             <div className="mut row"><Icon name="building" />Organized by <Link to={`/organizations/${o.organization?.id}`}><b>{o.organization?.name}</b></Link></div>
           </div>

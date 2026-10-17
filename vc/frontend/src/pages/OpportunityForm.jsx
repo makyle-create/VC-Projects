@@ -76,7 +76,7 @@ export default function OpportunityForm() {
         skills: r.data.skills || ''
       });
     }).catch(() => {
-      toast('Could not load this opportunity.');
+      toast('Could not load this opportunity.', 'err');
     });
   }, [id]);
 

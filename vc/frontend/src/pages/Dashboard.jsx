@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import api, { errMsg } from '../api';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../Toast';
@@ -10,6 +10,9 @@ import { Empty, Skeletons, Stat, StatusBadge } from '../components/ui';
 
 export default function Dashboard() {
   const { user } = useAuth();
+
+  // Administrators have their own console; the volunteer dashboard would just 403.
+  if (user.role === 'admin') return <Navigate to="/admin" replace />;
 
   return user.role === 'organization'
     ? <OrgDashboard />
@@ -173,7 +176,13 @@ function OrgDashboard() {
     );
   }
 
-  const t = d.totals;
+  // The API sends totals; fall back to computing them so this page can never crash.
+  const t = d.totals || {
+    posted: d.opportunities.length,
+    volunteers: new Set(d.signups.map((s) => s.user_id)).size,
+    hours: d.signups.filter((s) => s.status === 'completed').reduce((n, s) => n + (s.hours || 0), 0),
+    pending: d.signups.filter((s) => s.status === 'joined').length,
+  };
 
   return (
     <>

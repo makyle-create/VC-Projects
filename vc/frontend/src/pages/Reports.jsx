@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { jsPDF } from 'jspdf';
-import api from '../api';
+import api, { errMsg } from '../api';
 import { useAuth } from '../AuthContext';
 import Icon from '../components/Icon';
 import { catOf } from '../components/OppCard';
@@ -9,12 +8,16 @@ import { Empty, Skeletons, Stat } from '../components/ui';
 export default function Reports() {
   const { user } = useAuth();
   const [r, setR] = useState(null);
-  useEffect(() => { api.get('/reports/summary').then((x) => setR(x.data)); }, []);
+  const [err, setErr] = useState('');
+  useEffect(() => { api.get('/reports/summary').then((x) => setR(x.data)).catch((e) => setErr(errMsg(e))); }, []);
+  if (err) return <><h1>Report summary</h1><Empty icon="alert-circle" title="Couldn't load your report" text={err} /></>;
   if (!r) return <><h1>Report summary</h1><Skeletons n={3} /></>;
   const by = Object.entries(r.hours_by_category || {}).sort((a, b) => b[1] - a[1]); const mx = Math.max(1, ...by.map(([, h]) => h));
   const date = new Date(r.generated_at).toLocaleDateString('en-PH', { dateStyle: 'long' });
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
+    // Loaded on demand: jsPDF is large and most visitors never download a PDF.
+    const { jsPDF } = await import('jspdf');
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
     const W = doc.internal.pageSize.getWidth();
     let y = 64;

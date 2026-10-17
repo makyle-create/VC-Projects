@@ -29,9 +29,12 @@ export default function Profile() {
   const [pwErrors, setPwErrors] = useState({}); const [pwBusy, setPwBusy] = useState(false);
 
   useEffect(() => {
-    if (org) api.get('/org/opportunities').then((r) => setStats([[r.data.totals.posted, 'Posted opportunities', 'list'], [r.data.totals.volunteers, 'Volunteers', 'users', 'b'], [r.data.totals.hours, 'Volunteer hours', 'clock', 'a']]));
-    else api.get('/me/signups').then((r) => setStats([[r.data.totals.hours, 'Total hours', 'clock'], [r.data.totals.completed, 'Completed', 'check', 'b'], [r.data.totals.upcoming, 'Upcoming', 'calendar', 'a']]));
-  }, [org]);
+    if (user.role === 'admin') return; // admins have no volunteer/organization stats
+    const load = org
+      ? api.get('/org/opportunities').then((r) => setStats([[r.data.totals.posted, 'Posted opportunities', 'list'], [r.data.totals.volunteers, 'Volunteers', 'users', 'b'], [r.data.totals.hours, 'Volunteer hours', 'clock', 'a']]))
+      : api.get('/me/signups').then((r) => setStats([[r.data.totals.hours, 'Total hours', 'clock'], [r.data.totals.completed, 'Completed', 'check', 'b'], [r.data.totals.upcoming, 'Upcoming', 'calendar', 'a']]));
+    load.catch(() => setStats(null)); // the stat cards are optional; the form still works
+  }, [org, user.role]);
 
   const save = async (e) => {
     e.preventDefault(); setBusy(true); setErrors({});

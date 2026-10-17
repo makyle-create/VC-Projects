@@ -30,6 +30,9 @@ const P = {
   bookmark: <><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2h7A2.5 2.5 0 0 1 18 4.5V22l-6-4-6 4z" /></>,
   handshake: <><path d="m11 17 2 2a2 2 0 0 0 3-3"/><path d="m14 14 4 4a2 2 0 0 0 3-3l-7-7-3 3"/><path d="m3 12 5-5 4 1 2-2 7 7"/><path d="m3 12 6 6a2 2 0 0 0 3-3l-3-3"/></>,
   info: <><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></>,
+  'alert-circle': <><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></>,
+  shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+  bell: <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" />,
   arrow: <><path d="M5 12h14M13 6l6 6-6 6" /></>,
 };
 

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import Layout from './components/Layout';
 import { Login, Register } from './pages/Auth';
@@ -15,14 +15,15 @@ import Notifications from './pages/Notifications';
 import OrganizationProfile from './pages/OrganizationProfile';
 import Admin from './pages/Admin';
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+
 
 function ScrollTop() { const { pathname } = useLocation();    useEffect(() => { window.scrollTo(0, 0); }, [pathname]); return null; }
 
 function Protected({ role, children }) {
-  const { user, ready } = useAuth();
+  const { user, ready, loggedOut } = useAuth();
+  const { pathname } = useLocation();
   if (!ready) return <p className="mut" style={{ padding: 24 }}>Loading…</p>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace state={{ from: loggedOut ? '/' : pathname }} />;
   if (role && user.role !== role) return <Navigate to="/" replace />;
   return children;
 }
