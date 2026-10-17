@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// The React app is hosted separately; this service is JSON-only.
+Route::get('/', fn () => response()->json([
+    'name' => config('app.name'),
+    'status' => 'ok',
+    'api' => url('/api'),
+]));
